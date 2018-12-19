@@ -236,13 +236,27 @@ class RangeNode(OperandNode):
     """Represents a spreadsheet cell or range, e.g., A5 or B3:C20"""
     def __init__(self,*args):
         super(RangeNode,self).__init__(*args)
+
+        
     
     def get_cells(self):
         return resolve_range(self.tvalue)[0]
     
     def emit(self,ast,context=None):
         # resolve the range into cells
-        rng = self.tvalue.replace('$','')
+
+        myranges = context.excel.rangednames
+        namedIndex = []
+        try:
+            namedIndex = [x[0][2] for x in context.excel.rangednames if x[0][1] == self.tvalue]
+        except:
+            pass
+
+        if len(namedIndex) > 0:
+            rng = namedIndex[0].replace('$','')
+        else:
+            rng = self.tvalue.replace('$','')
+
         sheet = context.curcell.sheet + "!" if context else ""
         if is_range(rng):
             sh,start,end = split_range(rng)
@@ -570,7 +584,7 @@ class ExcelCompiler(object):
             # TODO: use a proper interface so we can (eventually) support loading from file (much faster)  Still need to find a good lib though.
             self.excel = ExcelWrapperImpl(filename=filename)
             self.excel.connect()
-            
+        #dirtytest = self.excel.rangednames
         self.log = logging.getLogger("decode.{0}".format(self.__class__.__name__))
         
     def cell2code(self,cell):

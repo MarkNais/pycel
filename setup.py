@@ -22,7 +22,7 @@ Pycel is a small python library that can translate an Excel spreadsheet into exe
       classifiers =[
         'Development Status :: 4 - Beta',
         'Intended Audience :: Developers',
-        'License ::  OSI Approved ',
+        'License ::  OSI Approved '
         ]
       )
 
