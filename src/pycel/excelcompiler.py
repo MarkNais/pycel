@@ -244,18 +244,13 @@ class RangeNode(OperandNode):
     
     def emit(self,ast,context=None):
         # resolve the range into cells
-
-        myranges = context.excel.rangednames
-        namedIndex = []
-        try:
-            namedIndex = [x[0][2] for x in context.excel.rangednames if x[0][1] == self.tvalue]
-        except:
-            pass
-
-        if len(namedIndex) > 0:
-            rng = namedIndex[0].replace('$','')
-        else:
-            rng = self.tvalue.replace('$','')
+        #MARKN inject function to check for table-reference 'Table1[col1]' or 'Table1[[col1]:[colN]]'
+            #Needs to decode to 'SheetA!E1:E22' or 'SheetA!E1:N22'
+            #Can be done by using 'get_tables' and offsetting by the '.id' of the column
+            #Needs to wrap Z -> AA appropriately in offseting.
+            #Mustn't assume table starts at A1.
+        rng = strMultiReplaceFromTupleList(self.tvalue,context.excel.rangednames,1,2)
+        rng = rng.replace('$','')
 
         sheet = context.curcell.sheet + "!" if context else ""
         if is_range(rng):
@@ -283,7 +278,10 @@ class FunctionNode(ASTNode):
         self.funmap = excellib.FUNCTION_MAP
         
     def emit(self,ast,context=None):
-        fun = self.tvalue.lower()
+        fun = self.tvalue
+        #MARKN Inject replacement here. Note the .lower() modification
+        fun = strMultiReplaceFromTupleList(fun,context.excel.rangednames,1,2)
+        fun = fun.lower()
         str = ''
 
         # Get the arguments
@@ -609,7 +607,7 @@ class ExcelCompiler(object):
             #strip the sheet
             G.node[n]['label'] = n.address()[n.address().find('!')+1:]
             
-    def gen_graph(self, seed, sheet=None):
+    def gen_graph(self, seed, sheet=None, context = None):
         """Given a starting point (e.g., A6, or A3:B7) on a particular sheet, generate
            a Spreadsheet instance that captures the logic and control flow of the equations."""
 
@@ -659,7 +657,15 @@ class ExcelCompiler(object):
             c1.compile()                
             
             # get all the cells/ranges this formula refers to
-            deps = [x.tvalue.replace('$','') for x in ast.nodes() if isinstance(x,RangeNode)]
+            protoDeps = []
+            deps = []
+            tried = ""
+            for x in ast.nodes():
+                if isinstance(x, RangeNode):
+                    protoDeps.append( strMultiReplaceFromTupleList(x.tvalue,self.excel.rangednames,1,2) )
+                        
+
+            deps = [x.replace('$','') for x in protoDeps]
             
             # remove dupes
             deps = uniqueify(deps)
@@ -724,8 +730,19 @@ class ExcelCompiler(object):
         print "Graph construction done, %s nodes, %s edges, %s cellmap entries" % (len(G.nodes()),len(G.edges()),len(cellmap))
 
         sp = Spreadsheet(G,cellmap)
-        
+        5
         return sp
+
+
+def strMultiReplaceFromTupleList(target, list, find_col, to_col):
+    for x in list:
+        #print x
+        #if 'APTS_Machine_Quantity__c' == x[0][find_col]:
+        #    print 'found APTS_Machine_Quantity__c'
+        #MARKN DEBUG
+        target = target.replace(x[0][find_col],x[0][to_col])
+    pass
+    return target
 
 if __name__ == '__main__':
     

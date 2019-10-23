@@ -22,10 +22,11 @@ if __name__ == '__main__':
     # test evaluation
     print "E42 is %s" % sp.evaluate('Fields Master!E42')
     
+    print "breakpoint!"
     print "Setting A1 to 200"
-    sp.set_value('Sheet1!A1',200)
+    #sp.set_value('Sheet1!A1',200)
     
-    print "D1 is now %s (the same should happen in Excel)" % sp.evaluate('Sheet1!D1')
+    #print "D1 is now %s (the same should happen in Excel)" % sp.evaluate('Sheet1!D1')
     
     # show the graph usisng matplotlib
     print "Plotting using matplotlib..."

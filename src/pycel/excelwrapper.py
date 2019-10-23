@@ -273,7 +273,18 @@ class ExcelOpxWrapper(ExcelWrapper):
             for worksheet, range_alias in named_range.destinations:
                 tuple_name = (len(rangednames)+1,  str(named_range.name), str(worksheet.title()+'!'+range_alias))
                 rangednames.append([tuple_name])
+        for table in ExcelOpxWrapper.get_tables(self):
+            tuple_name = (len(rangednames)+1,  str(table[1].displayName), str(table[0].title)+'!'+table[1].ref)
+            rangednames.append([tuple_name])
         return rangednames
+
+    def get_tables(self):
+        tables = []
+        for sh in self.workbook._sheets:
+            for t in sh._tables:
+                tables.append( (sh,t) )
+        #[(sh, t) for sh in self.workbook._sheets for t in sh._tables]
+        return tables
 
     def connect(self):
         self.workbook = load_workbook(self.filename)
